@@ -152,6 +152,46 @@ static void div_add_cmp_jump()
               << Mrps << " Mrps" << std::endl;
 }
 
+static void dbl_mul()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x4000000;
+
+    double test = 1.;
+    double factor = 1. + 1. / COUNT;
+    for (size_t i = 0; i < COUNT; i++)
+        test *= factor;
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static void dbl_div()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x4000000;
+
+    double test = 1.;
+    double factor = 1. + 1. / COUNT;
+    for (size_t i = 0; i < COUNT; i++)
+        test /= factor;
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
 static void same_addr_access()
 {
     arr[0].next_value = 0;
@@ -661,6 +701,10 @@ int main(int n, const char**)
     xor_xor_add_cmp_jump();
     mul_add_cmp_jump();
     div_add_cmp_jump();
+
+    std::cout << " --- floating points ---" << std::endl;
+    dbl_mul();
+    dbl_div();
 
     std::cout << " --- memory access ---" << std::endl;
     same_addr_access();
