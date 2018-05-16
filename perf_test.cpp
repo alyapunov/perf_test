@@ -460,6 +460,42 @@ static void func_call_inline(size_t n)
               << Mrps << " Mrps" << std::endl;
 }
 
+struct SomeSingleton
+{
+    SomeSingleton() { side_effect++; }
+    ~SomeSingleton() { side_effect++; }
+};
+
+size_t f_with_static_variable(size_t &x, size_t n)
+{
+    static SomeSingleton instance;
+    size_t r = x;
+    x += n;
+    return r;
+}
+
+static void func_call_static_var(size_t n)
+{
+    size_t res = 0;
+    now_t start = now();
+    const size_t COUNT = 0x10000000;
+    for (uint32_t i = 0; i < COUNT; i++)
+    {
+        size_t x = f_with_static_variable(res, n);
+        res += x;
+    }
+    now_t stop = now();
+    side_effect += res % 2;
+
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
 size_t __attribute__((noinline)) f_noinline(size_t &x, size_t n)
 {
     size_t r = x;
@@ -723,6 +759,7 @@ int main(int n, const char**)
     std::cout << " --- other ---" << std::endl;
     func_call_reference(n);
     func_call_inline(n);
+    func_call_static_var(n);
     func_call_noinline(n);
     func_call_virtual(n);
     func_call_by_pointer();
