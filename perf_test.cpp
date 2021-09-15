@@ -26,7 +26,6 @@ Entry arr[SIZE];
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> now_t;
 static now_t now() { return std::chrono::high_resolution_clock::now(); }
-// __attribute__((noinline))
 
 const char *expand_name(const char *n)
 {
@@ -55,10 +54,10 @@ static void warmup(int n)
     std::cout << "Warmup for " << milliseconds << "ms" << std::endl;
 }
 
-static void add_cmp_jump()
+static void __attribute__((noinline))
+add_cmp_jump(uint64_t COUNT = 0x40000000)
 {
     now_t start = now();
-    const volatile uint64_t COUNT = 0x40000000;
 
     __asm__ volatile(
     "label0:\n"
@@ -79,10 +78,10 @@ static void add_cmp_jump()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void xor_xor_add_cmp_jump()
+static void __attribute__((noinline))
+xor_xor_add_cmp_jump(uint64_t COUNT = 0x40000000)
 {
     now_t start = now();
-    const volatile uint64_t COUNT = 0x40000000;
 
     __asm__ volatile(
     "label1:\n"
@@ -104,10 +103,10 @@ static void xor_xor_add_cmp_jump()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void mul_add_cmp_jump()
+static void __attribute__((noinline))
+mul_add_cmp_jump(uint64_t COUNT = 0x40000000)
 {
     now_t start = now();
-    const volatile uint64_t COUNT = 0x40000000;
 
     __asm__ volatile(
     "label2:\n"
@@ -128,10 +127,10 @@ static void mul_add_cmp_jump()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void div_add_cmp_jump()
+static void __attribute__((noinline))
+div_add_cmp_jump(uint64_t COUNT = 0x4000000)
 {
     now_t start = now();
-    const volatile uint64_t COUNT = 0x4000000;
 
     __asm__ volatile(
     "label3:\n"
@@ -152,15 +151,19 @@ static void div_add_cmp_jump()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void dbl_mul()
+static uint64_t __attribute__((noinline)) int_mul_act(uint64_t factor, uint64_t COUNT)
+{
+    uint64_t test = 1;
+    for (size_t i = 0; i < COUNT; i++)
+        test *= factor;
+    return test;
+}
+
+static void int_mul()
 {
     now_t start = now();
     const volatile uint64_t COUNT = 0x4000000;
-
-    double test = 1.;
-    double factor = 1. + 1. / COUNT;
-    for (size_t i = 0; i < COUNT; i++)
-        test *= factor;
+    uint64_t test = int_mul_act(13, COUNT);
     now_t stop = now();
     side_effect += test > 2 ? 1 : 0;
 
@@ -170,17 +173,127 @@ static void dbl_mul()
     std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
               << (ns_per_op / unit) << " ticks,\t"
               << Mrps << " Mrps" << std::endl;
+}
+
+static uint64_t __attribute__((noinline)) int_div_act(uint64_t factor, uint64_t COUNT)
+{
+    uint64_t test = INT64_MAX;
+    for (size_t i = 0; i < COUNT; i++)
+    {
+        test /= factor;
+        test <<= 4;
+    }
+    return test;
+}
+
+static void int_div()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x4000000;
+    uint64_t test = int_div_act(4, COUNT);
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+typedef __uint128_t uint128_t;
+
+static uint128_t __attribute__((noinline)) int128_mul_act(uint128_t factor, uint64_t COUNT)
+{
+    uint128_t test = 1;
+    for (size_t i = 0; i < COUNT; i++)
+        test *= factor;
+    return test;
+}
+
+static void int128_mul()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x4000000;
+    uint128_t test = int128_mul_act(13, COUNT);
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static uint128_t __attribute__((noinline)) int128_div_act(uint128_t factor, uint64_t COUNT)
+{
+    uint128_t test = INT64_MAX;
+    for (size_t i = 0; i < COUNT; i++)
+    {
+        test /= factor;
+        test <<= 4;
+    }
+    return test;
+}
+
+static void int128_div()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x4000000;
+    uint128_t test = int128_div_act(4, COUNT);
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static double __attribute__((noinline)) dbl_mul_act(uint64_t COUNT)
+{
+    double test = 1.;
+    double factor = 1. + 1. / COUNT;
+    for (size_t i = 0; i < COUNT; i++)
+        test *= factor;
+    return test;
+}
+
+static void dbl_mul()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x4000000;
+    double test = dbl_mul_act(COUNT);
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static double __attribute__((noinline)) dbl_div_act(uint64_t COUNT)
+{
+    double test = 1.;
+    double factor = 1. + 1. / COUNT;
+    for (size_t i = 0; i < COUNT; i++)
+        test /= factor;
+    return test;
 }
 
 static void dbl_div()
 {
     now_t start = now();
     const volatile uint64_t COUNT = 0x4000000;
-
-    double test = 1.;
-    double factor = 1. + 1. / COUNT;
-    for (size_t i = 0; i < COUNT; i++)
-        test /= factor;
+    double test = dbl_div_act(COUNT);
     now_t stop = now();
     side_effect += test > 2 ? 1 : 0;
 
@@ -192,12 +305,62 @@ static void dbl_div()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void same_addr_access()
+static double __attribute__((noinline)) dbl128_mul_act(uint64_t COUNT)
+{
+    __float128 test = 1.;
+    __float128 factor = 1. + 1. / COUNT;
+    for (size_t i = 0; i < COUNT; i++)
+        test *= factor;
+    return test;
+}
+
+static void dbl128_mul()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x4000000;
+    __float128 test = dbl128_mul_act(COUNT);
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static double __attribute__((noinline)) dbl128_div_act(uint64_t COUNT)
+{
+    __float128 test = 1.;
+    __float128 factor = 1. + 1. / COUNT;
+    for (size_t i = 0; i < COUNT; i++)
+        test /= factor;
+    return test;
+}
+
+static void dbl128_div()
+{
+    now_t start = now();
+    const volatile uint64_t COUNT = 0x400000;
+    __float128 test = dbl128_div_act(COUNT);
+    now_t stop = now();
+    side_effect += test > 2 ? 1 : 0;
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static void __attribute__((noinline))
+same_addr_access(const size_t COUNT = SIZE)
 {
     arr[0].next_value = 0;
 
     now_t start = now();
-    const size_t COUNT = SIZE;
     uint32_t pos = 0;
     for (uint32_t i = 0; i < COUNT; i++)
     {
@@ -214,7 +377,8 @@ static void same_addr_access()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void sequential_access()
+static void __attribute__((noinline))
+sequential_access(const size_t COUNT = SIZE)
 {
     for (uint32_t i = 0; i < SIZE; i++)
     {
@@ -222,7 +386,6 @@ static void sequential_access()
     }
 
     now_t start = now();
-    const size_t COUNT = SIZE;
     uint32_t pos = 0;
     for (uint32_t i = 0; i < COUNT; i++)
     {
@@ -239,7 +402,8 @@ static void sequential_access()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void random_access()
+static void __attribute__((noinline))
+random_access(const size_t COUNT = SIZE)
 {
     for (uint32_t i = 0; i < SIZE; i++)
     {
@@ -260,7 +424,6 @@ static void random_access()
     }
 
     now_t start = now();
-    const size_t COUNT = SIZE;
     uint32_t pos = 0;
     for (uint32_t i = 0; i < COUNT; i++)
     {
@@ -279,7 +442,8 @@ static void random_access()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void predictable_branch()
+static void __attribute__((noinline))
+predictable_branch(const size_t COUNT = SIZE)
 {
     for (uint32_t i = 0; i < SIZE; i++)
     {
@@ -287,14 +451,14 @@ static void predictable_branch()
     }
 
     now_t start = now();
-    size_t COUNT = SIZE;
     uint32_t res = 0;
+    size_t made_count = COUNT;
     for (uint32_t i = 0; i < COUNT; i++)
     {
         if (arr[i].value < 1000)
         {
             res++;
-            COUNT--;
+            made_count--;
             i++;
         }
     }
@@ -302,14 +466,15 @@ static void predictable_branch()
     now_t stop = now();
 
     std::chrono::duration<double> diff = stop - start;
-    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
-    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / made_count;
+    double Mrps = made_count / diff.count() / 1000 / 1000;
     std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
               << (ns_per_op / unit) << " ticks,\t"
               << Mrps << " Mrps" << std::endl;
 }
 
-static void unpredictable_branch()
+static void __attribute__((noinline))
+unpredictable_branch(const size_t COUNT = SIZE)
 {
     for (uint32_t i = 0; i < SIZE; i++)
     {
@@ -317,14 +482,14 @@ static void unpredictable_branch()
     }
 
     now_t start = now();
-    size_t COUNT = SIZE;
     uint32_t res = 0;
-    for (uint32_t i = 0; i < SIZE; i++)
+    size_t made_count = COUNT;
+    for (uint32_t i = 0; i < COUNT; i++)
     {
         if (arr[i].value < 500)
         {
             res++;
-            COUNT--;
+            made_count--;
             i++;
         }
     }
@@ -332,8 +497,8 @@ static void unpredictable_branch()
     now_t stop = now();
 
     std::chrono::duration<double> diff = stop - start;
-    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
-    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / made_count;
+    double Mrps = made_count / diff.count() / 1000 / 1000;
     std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
               << (ns_per_op / unit) << " ticks,\t"
               << Mrps << " Mrps" << std::endl;
@@ -341,7 +506,8 @@ static void unpredictable_branch()
 
 static volatile bool must_throw = false;
 
-static void try_reference()
+static void __attribute__((noinline))
+try_reference()
 {
     now_t start = now();
     const size_t COUNT = SIZE;
@@ -361,10 +527,10 @@ static void try_reference()
 
 }
 
-static void try_nothrow()
+static void __attribute__((noinline))
+try_nothrow(const size_t COUNT = SIZE)
 {
     now_t start = now();
-    const size_t COUNT = SIZE;
     for (uint32_t i = 0; i < COUNT; i++)
     {
         try {
@@ -384,11 +550,11 @@ static void try_nothrow()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void try_throw()
+static void __attribute__((noinline))
+try_throw(const size_t COUNT = SIZE / 10)
 {
     must_throw = true;
     now_t start = now();
-    const size_t COUNT = SIZE / 10;
     for (uint32_t i = 0; i < COUNT; i++)
     {
         try {
@@ -408,7 +574,8 @@ static void try_throw()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void func_call_reference(size_t n)
+static void __attribute__((noinline))
+func_call_reference(size_t n)
 {
     size_t res = 0;
     now_t start = now();
@@ -438,7 +605,8 @@ size_t f_inline(size_t &x, size_t n)
     return r;
 }
 
-static void func_call_inline(size_t n)
+static void __attribute__((noinline))
+func_call_inline(size_t n)
 {
     size_t res = 0;
     now_t start = now();
@@ -474,7 +642,8 @@ size_t f_with_static_variable(size_t &x, size_t n)
     return r;
 }
 
-static void func_call_static_var(size_t n)
+static void __attribute__((noinline))
+func_call_static_var(size_t n)
 {
     size_t res = 0;
     now_t start = now();
@@ -503,7 +672,8 @@ size_t __attribute__((noinline)) f_noinline(size_t &x, size_t n)
     return r;
 }
 
-static void func_call_noinline(size_t n)
+static void __attribute__((noinline))
+func_call_noinline(size_t n)
 {
     size_t res = 0;
     now_t start = now();
@@ -542,7 +712,8 @@ struct B : A
     }
 };
 
-static void func_call_virtual(size_t n)
+static void __attribute__((noinline))
+func_call_virtual(size_t n)
 {
     size_t res = 0;
     now_t start = now();
@@ -586,11 +757,11 @@ static void *f6(size_t& x) { x ^= 14; return (void*)f7; }
 static void *f7(size_t& x) { x ^= 15; return (void*)f8; }
 static void *f8(size_t& x) { x ^= 16; return (void*)f1; }
 
-static void __attribute__((noinline)) func_call_by_pointer()
+static void __attribute__((noinline))
+func_call_by_pointer(const size_t COUNT = 0x10000000)
 {
     f_t f = (f_t)f1;
     now_t start = now();
-    const size_t COUNT = 0x10000000;
     size_t res = 0;
     for (uint32_t i = 0; i < COUNT; i++)
     {
@@ -607,18 +778,18 @@ static void __attribute__((noinline)) func_call_by_pointer()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void func_call_by_ptr_arr()
+static void __attribute__((noinline))
+func_call_by_ptr_arr(const size_t COUNT = SIZE)
 {
     f_t f[8] = {f1, f2, f3, f4, f5, f6, f7, f8};
-    for (uint32_t i = 0; i < SIZE; i++)
+    for (uint32_t i = 0; i < COUNT; i++)
     {
         arr[i].value = rand();
     }
 
     now_t start = now();
-    const size_t COUNT = SIZE;
     size_t res = 0;
-    for (uint32_t i = 0; i < SIZE; i++)
+    for (uint32_t i = 0; i < COUNT; i++)
     {
         f[(res + arr[i].value) % 8](res);
     }
@@ -633,12 +804,12 @@ static void func_call_by_ptr_arr()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void atomic_one_user()
+static void __attribute__((noinline))
+atomic_inc_stl(const size_t COUNT = 0x10000000)
 {
     std::atomic<uint64_t> c;
     now_t start = now();
-    const size_t COUNT = 0x10000000;
-    for (uint32_t i = 0; i < COUNT; i++)
+    for (size_t i = 0; i < COUNT; i++)
     {
         ++c;
     }
@@ -652,11 +823,49 @@ static void atomic_one_user()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void mutex_one_user()
+static void __attribute__((noinline))
+atomic_inc_acq_rel(const size_t COUNT = 0x10000000)
+{
+    uint64_t c;
+    now_t start = now();
+    for (size_t i = 0; i < COUNT; i++)
+    {
+        __atomic_add_fetch(&c, 1, __ATOMIC_ACQ_REL);
+    }
+    now_t stop = now();
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static void __attribute__((noinline))
+atomic_inc_relax(const size_t COUNT = 0x10000000)
+{
+    uint64_t c;
+    now_t start = now();
+    for (size_t i = 0; i < COUNT; i++)
+    {
+        __atomic_add_fetch(&c, 1, __ATOMIC_RELAXED);
+    }
+    now_t stop = now();
+
+    std::chrono::duration<double> diff = stop - start;
+    double ns_per_op = diff.count() * 1000 * 1000 * 1000 / COUNT;
+    double Mrps = COUNT / diff.count() / 1000 / 1000;
+    std::cout << NAME << ": " << ns_per_op << "ns per operation,\t"
+              << (ns_per_op / unit) << " ticks,\t"
+              << Mrps << " Mrps" << std::endl;
+}
+
+static void __attribute__((noinline))
+mutex_lock_unlock(const size_t COUNT = 0x1000000)
 {
     std::mutex m;
     now_t start = now();
-    const size_t COUNT = 0x10000000;
     for (uint32_t i = 0; i < COUNT; i++)
     {
         std::lock_guard<std::mutex> l(m);
@@ -671,7 +880,8 @@ static void mutex_one_user()
               << Mrps << " Mrps" << std::endl;
 }
 
-static void sys_call()
+static void __attribute__((noinline))
+sys_call(const size_t COUNT = SIZE / 16)
 {
     int fd[2];
     if (pipe(fd))
@@ -680,7 +890,6 @@ static void sys_call()
     int rd = fd[0];
 
     now_t start = now();
-    const size_t COUNT = SIZE / 2;
     for (uint32_t i = 0; i < COUNT; i += 2) // 2 sys calls per cycle
     {
         char x = '?';
@@ -706,10 +915,10 @@ static void thread_start_stop_func()
 {
 }
 
-static void thread_start_stop()
+static void __attribute__((noinline))
+thread_start_stop(const size_t COUNT = SIZE / 1024)
 {
     now_t start = now();
-    const size_t COUNT = SIZE / 100;
     for (uint32_t i = 0; i < COUNT; i++)
     {
         std::thread t(thread_start_stop_func);
@@ -737,10 +946,16 @@ int main(int n, const char**)
     xor_xor_add_cmp_jump();
     mul_add_cmp_jump();
     div_add_cmp_jump();
+    int_mul();
+    int_div();
+    int128_mul();
+    int128_div();
 
     std::cout << " --- floating points ---" << std::endl;
     dbl_mul();
     dbl_div();
+    dbl128_mul();
+    dbl128_div();
 
     std::cout << " --- memory access ---" << std::endl;
     same_addr_access();
@@ -764,11 +979,12 @@ int main(int n, const char**)
     func_call_virtual(n);
     func_call_by_pointer();
     func_call_by_ptr_arr();
-    atomic_one_user();
-    mutex_one_user();
+    atomic_inc_stl();
+    atomic_inc_acq_rel();
+    atomic_inc_relax();
+    mutex_lock_unlock();
     sys_call();
     thread_start_stop();
 
-
     std::cout << "Side effect (ignore it) " << side_effect % 2 << std::endl;
-};
+}
